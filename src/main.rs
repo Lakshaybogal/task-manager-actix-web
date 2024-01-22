@@ -1,23 +1,66 @@
-mod api;
-
-use api::task::{
-    get_task
-};
-use actix_web::{HttpServer,App,web::Data,middleware::Logger};
+mod handler {
+    pub mod model;
+    pub mod route;
+}
+use actix_cors::Cors;
+use actix_web::middleware::Logger;
+use actix_web::{http::header, web, App, HttpServer};
+use dotenv::dotenv;
+use handler::model::AppState;
+use handler::route::{add_task, add_user, get_all_tasks, get_tasks, get_all_users, health_checker_handler, task_done,get_user,delete_task};
+use sqlx::postgres::PgPoolOptions;
 
 #[actix_web::main]
-async fn main()->std::io::Result<()> {
-    std::env::set_var("RUST_LOG", "debug");
-    std::env::set_var("RUST_BACKTRACE", "1");
+async fn main() -> std::io::Result<()> {
+    if std::env::var_os("RUST_LOG").is_none() {
+        std::env::set_var("RUST_LOG", "actix_web=info");
+    }
+    dotenv().ok();
     env_logger::init();
 
+    let database_url = std::env::var("DATABASE_URL").expect("DATABASE_URL must be set");
+    let pool = match PgPoolOptions::new()
+        .max_connections(10)
+        .connect(&database_url)
+        .await
+    {
+        Ok(pool) => {
+            println!("✅Connection to the database is successful!");
+            pool
+        }
+        Err(err) => {
+            println!("🔥 Failed to connect to the database: {:?}", err);
+            std::process::exit(1);
+        }
+    };
+
+    println!("🚀 Server started successfully");
+
     HttpServer::new(move || {
-        let logger = new Logger::default();
+        let cors = Cors::default()
+            .allowed_origin("http://localhost:3000")
+            .allowed_methods(vec!["GET", "POST", "PATCH", "DELETE"])
+            .allowed_headers(vec![
+                header::CONTENT_TYPE,
+                header::AUTHORIZATION,
+                header::ACCEPT,
+            ])
+            .supports_credentials();
         App::new()
-        .wrap(logger)
-        .service(get_task)
+            .app_data(web::Data::new(AppState { db: pool.clone() }))
+            .service(health_checker_handler)
+            .service(get_all_tasks)
+            .service(get_tasks)
+            .service(get_all_users)
+            .service(add_task)
+            .service(add_user)
+            .service(task_done)
+            .service(get_user)
+            .service(delete_task)
+            .wrap(cors)
+            .wrap(Logger::default())
     })
-    .bind(("127.0.0.1",108))?
+    .bind(("127.0.0.1", 8000))?
     .run()
     .await
 }
