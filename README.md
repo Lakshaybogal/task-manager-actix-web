@@ -34,6 +34,58 @@ The project is organized into three main modules: `handler`, `model`, and the ma
    - **Get User by ID**: Retrieves user details by user ID.
    - **Delete Task**: Deletes a task, updating user task counts if the task is done.
 
+# User Guide
+
+## 1. Environment Setup:
+
+- Ensure that the required environment variables are set, including `DATABASE_URL` for the PostgreSQL connection.
+
+## 2. Running the Server:
+
+- Execute the `main` function to start the Actix web server.
+- The server runs on "http://127.0.0.1:8000" by default.
+
+## 3. Routes:
+
+### Health Check
+
+- **Endpoint:** `/healthchecker`
+- **Method:** GET
+- **Response:** Server health status.
+
+### Task Operations
+
+- **Get All Tasks:**
+
+  - **Endpoint:** `/get_all_tasks`
+  - **Method:** GET
+  - **Response:** List of all tasks.
+
+- **Get Tasks for a User:**
+
+  - **Endpoint:** `/get_tasks/{user_id}`
+  - **Method:** GET
+  - **Response:** Tasks for the specified user.
+
+- **Add Task:**
+
+  - **Endpoint:** `/add_task`
+  - **Method:** POST
+  - **Body:** JSON payload with `user_id` and `task_name`.
+  - **Response:** Added task details.
+
+- **Mark Task as Done:**
+
+  - **Endpoint:** `/task_done`
+  - **Method:** POST
+  - **Body:** JSON payload with `user_id` and `task_id`.
+  - **Response:** Success or error message.
+
+- **Delete Task:**
+  - **Endpoint:** `/delete_task`
+  - **Method:** POST
+  - **Body:** JSON payload with `user_id` and `task_id`.
+
 ### Model
 
 - **AppState Struct**: Holds the database connection pool.
